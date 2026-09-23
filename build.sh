@@ -590,7 +590,6 @@ printf '%s\n' \
   "APP_URL=${APP_URL}" \
   "SQS_QUEUE=${SQS_QUEUE}" \
   "REGISTER_NEW_TD=${REGISTER_NEW_TD}" \
-  "DEPLOY_MUTATED=false" \
   >> deploy.env
 
 
