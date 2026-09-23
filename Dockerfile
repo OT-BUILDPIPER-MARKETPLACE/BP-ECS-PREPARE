@@ -1,6 +1,7 @@
 FROM ubuntu:24.04
 
 USER root
+
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     bash \
@@ -12,13 +13,17 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Create non-root user
-RUN addgroup -g 65522 buildpiper && \
-    adduser -D -u 65522 -G buildpiper -h /home/buildpiper buildpiper
+RUN groupadd --gid 65522 buildpiper && \
+    useradd --uid 65522 \
+            --gid 65522 \
+            --create-home \
+            --home-dir /home/buildpiper \
+            --shell /bin/bash \
+            buildpiper
 
 # Copy buildpiper shell functions
 COPY --chown=buildpiper:buildpiper BP-BASE-SHELL-STEPS /opt/buildpiper/shell-functions/
 
-# Recreate all directories present in the referenced Dockerfile
 RUN mkdir -p \
     /src/reports \
     /bp/data \
@@ -37,8 +42,6 @@ RUN mkdir -p \
     /src /bp /opt /usr/local/bin /tmp /app /home/buildpiper
 
 WORKDIR /app
-
-COPY build.sh .
 ADD BP-BASE-SHELL-STEPS /opt/buildpiper/shell-functions
 
 ENV IAM_ROLE_TO_ASSUME=""
@@ -50,17 +53,13 @@ ENV IMAGE=""
 ENV CLUSTER=""
 ENV SLEEP_DURATION="0s"
 
-# Switch to non-root user
 USER buildpiper
 WORKDIR /home/buildpiper
 
-# Copy build script
 COPY --chown=buildpiper:buildpiper build.sh .
 COPY --chown=buildpiper:buildpiper ecs-task-definition.sh .
 
-# Make script executable
-RUN chmod +x /home/buildpiper/build.sh
-RUN chmod +x /home/buildpiper/ecs-task-definition.sh
+RUN chmod +x /home/buildpiper/build.sh && \
+    chmod +x /home/buildpiper/ecs-task-definition.sh
 
-# Entry point
 ENTRYPOINT ["./build.sh"]
