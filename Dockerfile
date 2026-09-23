@@ -32,7 +32,6 @@ RUN mkdir -p \
     /opt/buildpiper/shell-functions \
     /opt/buildpiper/data \
     /usr/local/bin \
-    /etc/timezone \
     /opt/python_versions \
     /opt/jdk \
     /opt/maven \
