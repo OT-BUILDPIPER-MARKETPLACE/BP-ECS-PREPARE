@@ -567,6 +567,11 @@ if [[ "${SCHEDULER}" == "true" ]]; then
     if [[ -n "${!VAR_NAME:-}" ]]; then
       printf '%s\n' "${VAR_NAME}=${!VAR_NAME}" >> deploy.env
     fi
+    VAR_NAME="${SCHEDULER_UPPER}_TASK_DEF_ARN"
+
+    if [[ -n "${!VAR_NAME:-}" ]]; then
+        printf '%s\n' "${VAR_NAME}=${!VAR_NAME}" >> deploy.env
+    fi
 
     # Scheduler target files
     printf '%s\n' \
