@@ -31,7 +31,7 @@ logInfoMessage "image name: $IMAGE_NAME"
 
 setupAwsCredentials() {
 
-    echo "=== Setting up AWS credentials ==="
+    logInfoMessage "=== Setting up AWS credentials ==="
 
     if [ "${ASSUME_ROLE:-false}" == "true" ]; then
 
@@ -123,7 +123,7 @@ for SERVICE in "${SERVICE_LIST[@]}"; do
 
   declare "${SERVICE_UPPER}_LOG_GROUP=${LOG_GROUP}"
 
-  echo "${SERVICE_UPPER}_LOG_GROUP=${LOG_GROUP}"
+  logInfoMessage "${SERVICE_UPPER}_LOG_GROUP=${LOG_GROUP}"
   export "${SERVICE_UPPER}_LOG_GROUP=${LOG_GROUP}"
 
 done
