@@ -10,6 +10,8 @@ if [ "$DEBUG" = true ]; then
   set -x
 fi
 
+sleep  $SLEEP_DURATION
+
 
 LATEST_IMAGE_NAME=${BP_IMAGE_URI}:${BP_IMAGE_TAG}
 export "${LATEST_IMAGE_NAME}=${LATEST_IMAGE_NAME}"
