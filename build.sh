@@ -586,19 +586,6 @@ fi
 
 
 # ============================================================
-# Feature flags / common configuration
-# ============================================================
-
-printf '%s\n' \
-  "SCHEDULER=${SCHEDULER}" \
-  "TARGET_GROUP=${TARGET_GROUP}" \
-  "APP_URL=${APP_URL}" \
-  "SQS_QUEUE=${SQS_QUEUE}" \
-  "REGISTER_NEW_TD=${REGISTER_NEW_TD}" \
-  >> deploy.env
-
-
-# ============================================================
 # Optional common paths / names
 # ============================================================
 
