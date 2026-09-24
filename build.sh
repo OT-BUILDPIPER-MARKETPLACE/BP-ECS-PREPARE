@@ -22,7 +22,7 @@ sleep  $SLEEP_DURATION
 
 
 LATEST_IMAGE_NAME=${IMAGE_NAME}:${DEPLOY_TAG}
-export LATEST_IMAGE_NAME="${BP_IMAGE_URI}:${DEPLOY_TAG}"
+export LATEST_IMAGE_NAME="${IMAGE_NAME}:${DEPLOY_TAG}"
 DEPLOY_STARTED_AT="$(date +%s)"
 logInfoMessage "latest image name: $LATEST_IMAGE_NAME"
 logInfoMessage "image name: $IMAGE_NAME"
