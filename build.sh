@@ -22,7 +22,7 @@ sleep  $SLEEP_DURATION
 
 
 LATEST_IMAGE_NAME=${BP_IMAGE_URI}:${BP_IMAGE_TAG}
-export "${LATEST_IMAGE_NAME}=${LATEST_IMAGE_NAME}"
+export LATEST_IMAGE_NAME="${BP_IMAGE_URI}:${BP_IMAGE_TAG}"
 DEPLOY_STARTED_AT="$(date +%s)"
 logInfoMessage "latest image name: $LATEST_IMAGE_NAME"
 logInfoMessage "image name: $IMAGE_NAME"
@@ -52,7 +52,7 @@ setupAwsCredentials() {
             logErrorMessage "AWS_PROFILE must be set when ASSUME_ROLE=false"
             exit 1
         fi
-
+        export AWS_PROFILE="${AWS_PROFILE}"
         # Get credentials from AWS profile
         export AWS_ACCESS_KEY_ID="$(aws configure get aws_access_key_id --profile "$AWS_PROFILE")"
         export AWS_SECRET_ACCESS_KEY="$(aws configure get aws_secret_access_key --profile "$AWS_PROFILE")"
