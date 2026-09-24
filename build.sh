@@ -21,8 +21,8 @@ cd  "${CODEBASE_LOCATION}"
 sleep  $SLEEP_DURATION
 
 
-LATEST_IMAGE_NAME=${BP_IMAGE_URI}:${BP_IMAGE_TAG}
-export LATEST_IMAGE_NAME="${BP_IMAGE_URI}:${BP_IMAGE_TAG}"
+LATEST_IMAGE_NAME=${IMAGE_NAME}:${DEPLOY_TAG}
+export LATEST_IMAGE_NAME="${BP_IMAGE_URI}:${DEPLOY_TAG}"
 DEPLOY_STARTED_AT="$(date +%s)"
 logInfoMessage "latest image name: $LATEST_IMAGE_NAME"
 logInfoMessage "image name: $IMAGE_NAME"
@@ -97,11 +97,11 @@ setupAwsCredentials() {
     logInfoMessage "=== AWS credentials setup completed ==="
 }
 
-if [ -n "${ASSUME_ROLE:-}" ] || [ -n "${AWS_PROFILE:-}" ]; then
-    setupAwsCredentials
-else
-    logInfoMessage "Neither ASSUME_ROLE nor AWS_PROFILE is set, skipping AWS credential setup"
-fi
+  if [[ "${ASSUME_ROLE:-false}" == "true" || -n "${AWS_PROFILE:-}" ]]; then
+      setupAwsCredentials
+  else
+      logInfoMessage "Neither ASSUME_ROLE=true nor AWS_PROFILE is set, skipping AWS credential setup"
+  fi
 
 
 IFS=',' read -ra SERVICE_LIST <<< "${SERVICES}"
