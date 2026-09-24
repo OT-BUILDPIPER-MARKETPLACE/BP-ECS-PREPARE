@@ -6,6 +6,8 @@ source /opt/buildpiper/shell-functions/str-functions.sh
 source /opt/buildpiper/shell-functions/file-functions.sh
 source /opt/buildpiper/shell-functions/aws-functions.sh
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 if [ "$DEBUG" = true ]; then
   set -x
 fi
@@ -450,7 +452,7 @@ if [[ "${REGISTER_NEW_TD}" == "true" ]]; then
     logInfoMessage "Output File    : ${OUTPUT_FILE}"
     logInfoMessage "=========================================="
 
-    if ! NEW_TASK_DEF_ARN="$(./ecs-task-definition.sh \
+    if ! NEW_TASK_DEF_ARN="$("${SCRIPT_DIR}/ecs-task-definition.sh" \
         "${PREVIOUS_TASK_DEF}" \
         "${LATEST_IMAGE_NAME}" \
         "${OUTPUT_FILE}")"; then
