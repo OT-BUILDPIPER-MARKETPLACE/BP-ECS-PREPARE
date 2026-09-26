@@ -15,7 +15,7 @@ fi
 CODEBASE_LOCATION="${WORKSPACE}"/"${CODEBASE_DIR}"
 logInfoMessage "I'll do processing at [$CODEBASE_LOCATION]"
 
-cd  "${CODEBASE_LOCATION}"
+cd "${CODEBASE_LOCATION}"
 
 sleep  $SLEEP_DURATION
 
@@ -168,8 +168,7 @@ add_event "TASK_DEFINITION_FETCH for ${SERVICE}" "STARTED" "Fetching task defini
       --cluster "${ECS_CLUSTER}" \
       --services "${SERVICE}" \
       --query 'services[0].taskDefinition' \
-      --output text)"
-      add_event "TASK_DEFINITION_FETCH for ${SERVICE}" "SUCCESS" "Task definition fetched successfully for service: ${SERVICE}"; then
+      --output text)"; then
 
     logErrorMessage "Failed to get task definition for service: ${SERVICE}"
     add_event "TASK_DEFINITION_FETCH for ${SERVICE}" "FAILED" "Failed to fetch task definition for service: ${SERVICE}"
@@ -190,8 +189,7 @@ add_event "TASK_DEFINITION_FETCH for ${SERVICE}" "STARTED" "Fetching task defini
 
   logInfoMessage "PREVIOUS_${SERVICE_UPPER}_TASK_DEF=${TASK_DEF_ARN}"
   export "PREVIOUS_${SERVICE_UPPER}_TASK_DEF=${TASK_DEF_ARN}"
-  add_event "PREVIOUS_${SERVICE_UPPER}_TASK_DEF" "Su"
-    add_event "TASK_DEFINITION_FETCH for ${SERVICE}" "FAILED" "No task definition found for service: ${SERVICE}"
+  add_event "TASK_DEFINITION_FETCH for ${SERVICE}" "SUCCESS" "Task definition fetched successfully for service: ${SERVICE}"
 done
 
 logInfoMessage "======================================================="
@@ -225,23 +223,22 @@ if [[ "${SCHEDULER}" == "true" ]]; then
     # Get scheduler targets
     if ! aws events list-targets-by-rule \
         --rule "${RULE}" \
-        --output json > "current-targets-${RULE}.json"
-        add_event "SCHEDULER_TARGETS_FETCH ${RULE}" "SUCCESS" "Scheduler targets fetched successfully"; then
-
+        --output json > "current-targets-${RULE}.json"; then
       logErrorMessage "Failed to get targets for scheduler rule: ${RULE}"
       saveTaskStatus 1 ${ACTIVITY_SUB_TASK_CODE}
       add_event "SCHEDULER_TARGETS_FETCH ${RULE}" "FAILED" "Scheduler targets fetch failed for rule: ${RULE}"
       exit 1
     fi
+    add_event "SCHEDULER_TARGETS_FETCH ${RULE}" "SUCCESS" "Scheduler targets fetched successfully"
 
     # Validate Targets
-    if ! jq -e '.Targets' "current-targets-${RULE}.json" >/dev/null
-      add_event "SCHEDULER_TARGETS_FETCH ${RULE}" "SUCCESS" "Targets found for scheduler rule: ${RULE} & data store in current-targets-${RULE}.json" ; then
+    if ! jq -e '.Targets' "current-targets-${RULE}.json" >/dev/null; then
       logErrorMessage "Targets not found for scheduler rule: ${RULE}"
       saveTaskStatus 1 ${ACTIVITY_SUB_TASK_CODE}
       add_event "SCHEDULER_TARGETS_FETCH ${RULE}" "FAILED" "Targets not found for scheduler rule: ${RULE}"
       exit 1
     fi
+    add_event "SCHEDULER_TARGETS_FETCH ${RULE}" "SUCCESS" "Targets found for scheduler rule: ${RULE} & data store in current-targets-${RULE}.json" 
 
     # ecs-rollback.sh expects a JSON array of Targets
     jq '.Targets' \
