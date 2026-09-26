@@ -262,7 +262,6 @@ if [[ "${SCHEDULER}" == "true" ]]; then
 
     logErrorMessage "Scheduler rules are required"
     add_event "SCHEDULER_PROCESSING" "FAILED" "SCHEDULER_RULES_MISSING" "Scheduler rules are required when SCHEDULER=true"
-      add_event "SCHEDULER_PROCESSING" "FAILED" "SCHEDULER_PROCESSING_FAILED" "Scheduler processing failed"    
     exit 1
   fi
 
@@ -385,8 +384,7 @@ if [[ "${TARGET_GROUP}" == "true" ]]; then
 
       logErrorMessage "Empty target group service name found"
 
-      add_event "TARGET_GROUP_PROCESSING for ${SERVICE}" "FAILED" "TARGET_GROUP_SERVICE_EMPTY" "Empty service name found in TARGET_GROUP_SERVICES"
-      add_event "TARGET_GROUP_PROCESSING" "FAILED" "TARGET_GROUP_PROCESSING_FAILED" "Target group processing Failed"
+      add_event "TARGET_GROUP_PROCESSING" "FAILED" "TARGET_GROUP_SERVICE_EMPTY" "Empty service name found in TARGET_GROUP_SERVICES"
       exit 1
     fi
 
@@ -450,11 +448,7 @@ fi
 
 if [[ "${APP_URL}" == "true" ]]; then
 
-  add_event \
-    "APP_URL_PROCESSING" \
-    "STARTED" \
-    "APP_URL_PROCESSING_STARTED" \
-    "APP_URL processing started"
+  add_event "APP_URL_PROCESSING" "STARTED" "APP_URL_PROCESSING_STARTED" "APP_URL processing started"
 
   IFS=',' read -ra SERVICE_LIST <<< "${APP_URL_SERVICES}"
 
@@ -466,11 +460,7 @@ if [[ "${APP_URL}" == "true" ]]; then
 
       logErrorMessage "Empty service name found"
 
-      add_event \
-        "APP_URL_PROCESSING" \
-        "FAILED" \
-        "APP_URL_SERVICE_EMPTY" \
-        "Empty service name found in APP_URL_SERVICES"
+      add_event "APP_URL_PROCESSING" "FAILED" "APP_URL_SERVICE_EMPTY" "Empty service name found in APP_URL_SERVICES"
 
       exit 1
     fi
@@ -482,23 +472,13 @@ if [[ "${APP_URL}" == "true" ]]; then
     if [[ -z "${!TASK_DEF_VAR:-}" ]]; then
 
       logErrorMessage "${TASK_DEF_VAR} is not set"
-
-      add_event \
-        "APP_URL_PROCESSING" \
-        "FAILED" \
-        "APP_URL_TASK_DEFINITION_MISSING" \
-        "${TASK_DEF_VAR} is not set for service: ${SERVICE}"
-
+      add_event "APP_URL_PROCESSING" "FAILED" "APP_URL_TASK_DEFINITION_MISSING" "${TASK_DEF_VAR} is not set for service: ${SERVICE}"
       exit 1
     fi
 
     TASK_DEF="${!TASK_DEF_VAR}"
 
-    add_event \
-      "APP_URL_FETCH" \
-      "STARTED" \
-      "APP_URL_FETCH_STARTED" \
-      "Fetching APP_URL for service: ${SERVICE}"
+    add_event "APP_URL_FETCH" "STARTED" "APP_URL_FETCH_STARTED" "Fetching APP_URL for service: ${SERVICE}"
 
     logInfoMessage "=========================================="
     logInfoMessage "Getting APP_URL for service: ${SERVICE}"
@@ -511,60 +491,31 @@ if [[ "${APP_URL}" == "true" ]]; then
         --output text)"; then
 
       logErrorMessage "Failed to get APP_URL for service: ${SERVICE}"
-
       saveTaskStatus 1 ${ACTIVITY_SUB_TASK_CODE}
-
-      add_event \
-        "APP_URL_FETCH" \
-        "FAILED" \
-        "APP_URL_FETCH_FAILED" \
-        "Failed to get APP_URL for service: ${SERVICE}"
-
+      add_event "APP_URL_FETCH" "FAILED" "APP_URL_FETCH_FAILED" "Failed to get APP_URL for service: ${SERVICE}"
       exit 1
     fi
 
     if [[ -z "${SERVICE_APP_URL}" || "${SERVICE_APP_URL}" == "None" ]]; then
 
       logErrorMessage "APP_URL not found for service: ${SERVICE}"
-
       saveTaskStatus 1 ${ACTIVITY_SUB_TASK_CODE}
-
-      add_event \
-        "APP_URL_FETCH" \
-        "FAILED" \
-        "APP_URL_NOT_FOUND" \
-        "APP_URL not found for service: ${SERVICE}"
+      add_event "APP_URL_FETCH" "FAILED" "APP_URL_NOT_FOUND" "APP_URL not found for service: ${SERVICE}"
 
       exit 1
     fi
 
     declare "${SERVICE_UPPER}_APP_URL=${SERVICE_APP_URL}"
-
     logInfoMessage "${SERVICE_UPPER}_APP_URL=${SERVICE_APP_URL}"
-
-    add_event \
-      "APP_URL_FETCH" \
-      "SUCCESS" \
-      "APP_URL_FETCH_SUCCESS" \
-      "APP_URL fetched successfully for service: ${SERVICE}"
+    add_event "APP_URL_FETCH" "SUCCESS" "APP_URL_FETCH_SUCCESS" "APP_URL fetched successfully for service: ${SERVICE}"
 
   done
 
-  add_event \
-    "APP_URL_PROCESSING" \
-    "SUCCESS" \
-    "APP_URL_PROCESSING_COMPLETED" \
-    "APP_URL processing completed successfully"
-
+  add_event "APP_URL_PROCESSING" "SUCCESS" "APP_URL_PROCESSING_COMPLETED" "APP_URL processing completed successfully"
 else
 
   logInfoMessage "APP_URL=false — skipping APP_URL processing"
-
-  add_event \
-    "APP_URL_PROCESSING" \
-    "SKIPPED" \
-    "APP_URL_PROCESSING_SKIPPED" \
-    "APP_URL processing skipped because APP_URL=false"
+  add_event "APP_URL_PROCESSING" "SKIPPED" "APP_URL_PROCESSING_SKIPPED" "APP_URL processing skipped because APP_URL=false"
 fi
 
 
@@ -574,11 +525,7 @@ fi
 
 if [[ "${SQS_QUEUE}" == "true" ]]; then
 
-  add_event \
-    "SQS_QUEUE_PROCESSING" \
-    "STARTED" \
-    "SQS_QUEUE_PROCESSING_STARTED" \
-    "SQS queue processing started"
+  add_event "SQS_QUEUE_PROCESSING" "STARTED" "SQS_QUEUE_PROCESSING_STARTED" "SQS queue processing started"
 
   IFS=',' read -ra SERVICE_LIST <<< "${QUEUE_SERVICES}"
 
@@ -589,13 +536,7 @@ if [[ "${SQS_QUEUE}" == "true" ]]; then
     if [[ -z "${SERVICE}" ]]; then
 
       logErrorMessage "Empty service name found"
-
-      add_event \
-        "SQS_QUEUE_PROCESSING" \
-        "FAILED" \
-        "SQS_QUEUE_SERVICE_EMPTY" \
-        "Empty service name found in QUEUE_SERVICES"
-
+      add_event "SQS_QUEUE_PROCESSING" "FAILED" "SQS_QUEUE_SERVICE_EMPTY" "Empty service name found in QUEUE_SERVICES"
       exit 1
     fi
 
@@ -606,13 +547,7 @@ if [[ "${SQS_QUEUE}" == "true" ]]; then
     if [[ -z "${!TASK_DEF_VAR:-}" ]]; then
 
       logErrorMessage "${TASK_DEF_VAR} is not set"
-
-      add_event \
-        "SQS_QUEUE_PROCESSING" \
-        "FAILED" \
-        "SQS_QUEUE_TASK_DEFINITION_MISSING" \
-        "${TASK_DEF_VAR} is not set for service: ${SERVICE}"
-
+      add_event "SQS_QUEUE_PROCESSING" "FAILED" "SQS_QUEUE_TASK_DEFINITION_MISSING" "${TASK_DEF_VAR} is not set for service: ${SERVICE}"
       exit 1
     fi
 
@@ -635,68 +570,36 @@ if [[ "${SQS_QUEUE}" == "true" ]]; then
         --output text)"; then
 
       logErrorMessage "Failed to get SQS_QUEUE for service: ${SERVICE}"
-
       saveTaskStatus 1 ${ACTIVITY_SUB_TASK_CODE}
-
-      add_event \
-        "SQS_QUEUE_FETCH" \
-        "FAILED" \
-        "SQS_QUEUE_FETCH_FAILED" \
-        "Failed to get SQS_QUEUE for service: ${SERVICE}"
-
+      add_event "SQS_QUEUE_FETCH" "FAILED" "SQS_QUEUE_FETCH_FAILED" "Failed to get SQS_QUEUE for service: ${SERVICE}"
       exit 1
     fi
 
     if [[ -z "${SERVICE_QUEUE_NAME}" || "${SERVICE_QUEUE_NAME}" == "None" ]]; then
 
       logErrorMessage "SQS_QUEUE not found for service: ${SERVICE}"
-
       saveTaskStatus 1 ${ACTIVITY_SUB_TASK_CODE}
-
-      add_event \
-        "SQS_QUEUE_FETCH" \
-        "FAILED" \
-        "SQS_QUEUE_NOT_FOUND" \
-        "SQS_QUEUE not found for service: ${SERVICE}"
+      add_event "SQS_QUEUE_FETCH" "FAILED" "SQS_QUEUE_NOT_FOUND" "SQS_QUEUE not found for service: ${SERVICE}"
 
       exit 1
     fi
 
     declare "${SERVICE_UPPER}_QUEUE_NAME=${SERVICE_QUEUE_NAME}"
-
     logInfoMessage "${SERVICE_UPPER}_QUEUE_NAME=${SERVICE_QUEUE_NAME}"
-
     export "${SERVICE_UPPER}_QUEUE_NAME=${SERVICE_QUEUE_NAME}"
-
-    add_event \
-      "SQS_QUEUE_FETCH" \
-      "SUCCESS" \
-      "SQS_QUEUE_FETCH_SUCCESS" \
-      "SQS queue fetched successfully for service: ${SERVICE}"
+    add_event "SQS_QUEUE_FETCH" "SUCCESS" "SQS_QUEUE_FETCH_SUCCESS" "SQS queue fetched successfully for service: ${SERVICE}"
 
   done
 
-  add_event \
-    "SQS_QUEUE_PROCESSING" \
-    "SUCCESS" \
-    "SQS_QUEUE_PROCESSING_COMPLETED" \
-    "SQS queue processing completed successfully"
+  add_event "SQS_QUEUE_PROCESSING" "SUCCESS" "SQS_QUEUE_PROCESSING_COMPLETED" "SQS queue processing completed successfully"
 
 else
 
   logInfoMessage "QUEUE_NAME=false — skipping SQS_QUEUE processing"
+  add_event "SQS_QUEUE_PROCESSING" "SKIPPED" "SQS_QUEUE_PROCESSING_SKIPPED" "SQS queue processing skipped because SQS_QUEUE=false"
 
-  add_event \
-    "SQS_QUEUE_PROCESSING" \
-    "SKIPPED" \
-    "SQS_QUEUE_PROCESSING_SKIPPED" \
-    "SQS queue processing skipped because SQS_QUEUE=false"
 fi
 
-
-# ============================================================
-# REGISTER NEW TASK DEFINITIONS
-# ============================================================
 
 if [[ "${REGISTER_NEW_TD}" == "true" ]]; then
 
@@ -802,9 +705,6 @@ else
   add_event "TASK_DEFINITION_REGISTRATION" "SKIPPED" "TASK_DEFINITION_REGISTRATION_SKIPPED" "New task definition registration skipped because REGISTER_NEW_TD=false"
 fi
 
-# ============================================================
-# GENERATE DEPLOY.ENV
-# ============================================================
 
 logInfoMessage "=== prepare: generating deploy.env ==="
 
@@ -830,9 +730,7 @@ for SERVICE in "${SERVICE_LIST[@]}"; do
     logErrorMessage "Empty service name found while generating deploy.env"
 
     saveTaskStatus 1 ${ACTIVITY_SUB_TASK_CODE}
-
     add_event "DEPLOY_ENV_GENERATION" "FAILED" "DEPLOY_ENV_SERVICE_EMPTY" "Empty service name found while generating deploy.env"
-
     exit 1
   fi
 
