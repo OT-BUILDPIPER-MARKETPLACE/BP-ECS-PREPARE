@@ -133,11 +133,6 @@ setupAwsCredentials() {
     logInfoMessage "=== AWS credentials setup completed ==="
 }
 
-
-# ============================================================
-# RUN AWS CREDENTIAL SETUP
-# ============================================================
-
 if [[ "${ASSUME_ROLE:-false}" == "true" || -n "${AWS_PROFILE:-}" ]]; then
 
     add_event "AWS_CREDENTIAL_SETUP_FUNCTION" "STARTED" "AWS_CREDENTIAL_SETUP_FUNCTION_STARTED" "AWS credentials setup function execution started"
@@ -328,11 +323,6 @@ if [[ "${SCHEDULER}" == "true" ]]; then
 
     add_event "SCHEDULER_TARGET_ARRAY for ${RULE}" "SUCCESS" "SCHEDULER_TARGET_ARRAY_CREATED" "Scheduler target array created for rule: ${RULE}"
 
-
-    # --------------------------------------------------------
-    # Get Previous ECS Task Definition
-    # --------------------------------------------------------
-
     if ! TASK_DEF_ARN="$(jq -er \
         '.Targets[0].EcsParameters.TaskDefinitionArn' \
         "current-targets-${RULE}.json")"; then
@@ -441,11 +431,6 @@ else
   add_event "TARGET_GROUP_PROCESSING" "SKIPPED" "TARGET_GROUP_PROCESSING_SKIPPED" "Target group processing skipped because TARGET_GROUP=false"
 fi
 
-
-# ============================================================
-# APP URL PROCESSING
-# ============================================================
-
 if [[ "${APP_URL}" == "true" ]]; then
 
   add_event "APP_URL_PROCESSING" "STARTED" "APP_URL_PROCESSING_STARTED" "APP_URL processing started"
@@ -517,11 +502,6 @@ else
   logInfoMessage "APP_URL=false — skipping APP_URL processing"
   add_event "APP_URL_PROCESSING" "SKIPPED" "APP_URL_PROCESSING_SKIPPED" "APP_URL processing skipped because APP_URL=false"
 fi
-
-
-# ============================================================
-# SQS QUEUE PROCESSING
-# ============================================================
 
 if [[ "${SQS_QUEUE}" == "true" ]]; then
 
