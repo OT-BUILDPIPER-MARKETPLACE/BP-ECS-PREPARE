@@ -12,16 +12,12 @@ if [ "$DEBUG" = true ]; then
   set -x
 fi
 
-
 CODEBASE_LOCATION="${WORKSPACE}"/"${CODEBASE_DIR}"
 logInfoMessage "I'll do processing at [$CODEBASE_LOCATION]"
 
 cd  "${CODEBASE_LOCATION}"
 
-
-
 sleep  $SLEEP_DURATION
-
 
 LATEST_IMAGE_NAME=${IMAGE_NAME}:${DEPLOY_TAG}
 export LATEST_IMAGE_NAME="${IMAGE_NAME}:${DEPLOY_TAG}"
@@ -32,8 +28,10 @@ logInfoMessage "image name: $IMAGE_NAME"
 setupAwsCredentials() {
 
     logInfoMessage "=== Setting up AWS credentials ==="
-
+    add_event "AWS_CREDENTIAL_SETUP" "SETTING_UP" "Setting up AWS credentials for authentication"
     if [ "${ASSUME_ROLE:-false}" == "true" ]; then
+
+    add_event "AWS_CREDENTIAL_SETUP" "ASSUMING_ROLE" "Assuming AWS IAM role for authentication"
 
         if [ -z "${ACCOUNT_ID:-}" ] || [ -z "${ROLE_NAME:-}" ]; then
             logErrorMessage "ACCOUNT_ID and ROLE_NAME must be set when ASSUME_ROLE=true"
@@ -46,9 +44,11 @@ setupAwsCredentials() {
 
         getAssumeRole "$ROLE_ARN"
 
+    add_event "AWS_CREDENTIAL_SETUP" "SUCCESS" "Assuming AWS IAM role for authentication"
     else
 
         logInfoMessage "ASSUME_ROLE is not set to 'true', using AWS profile"
+        add_event "AWS_CREDENTIAL_SETUP" "START" "Using AWS profile for authentication"
 
         if [ -z "${AWS_PROFILE:-}" ]; then
             logErrorMessage "AWS_PROFILE must be set when ASSUME_ROLE=false"
@@ -65,26 +65,33 @@ setupAwsCredentials() {
         export AWS_DEFAULT_REGION="$AWS_REGION"
 
         logInfoMessage "AWS credentials loaded from profile: ${AWS_PROFILE}"
+        add_event "AWS_CREDENTIAL_SETUP" "SUCCESS" "Using AWS profile for authentication"
     fi
 
     if [ -z "${AWS_ACCESS_KEY_ID:-}" ]; then
         logErrorMessage "AWS_ACCESS_KEY_ID is not set"
+        add_event "AWS_CREDENTIAL_SETUP" "FAILED" "AWS_ACCESS_KEY_ID is not set"
         exit 1
+        
     fi
 
     if [ -z "${AWS_SECRET_ACCESS_KEY:-}" ]; then
         logErrorMessage "AWS_SECRET_ACCESS_KEY is not set"
+        add_event "AWS_CREDENTIAL_SETUP" "FAILED" "AWS_SECRET_ACCESS_KEY is not set"
         exit 1
+        
     fi
 
     if [ -z "${AWS_REGION:-}" ]; then
         logErrorMessage "AWS_REGION is not set"
+        add_event "AWS_CREDENTIAL_SETUP" "FAILED" "AWS_REGION is not set"
         exit 1
     fi
 
     if ! AWS_IDENTITY=$(aws sts get-caller-identity 2>/tmp/aws_error.log); then
         logErrorMessage "AWS authentication failed"
         cat /tmp/aws_error.log
+        add_event "AWS_CREDENTIAL_SETUP" "FAILED" "AWS authentication failed - $(cat /tmp/aws_error.log)"
         exit 1
     fi
 
@@ -97,13 +104,17 @@ setupAwsCredentials() {
     logInfoMessage "AWS ARN: ${AWS_ARN}"
 
     logInfoMessage "=== AWS credentials setup completed ==="
+    add_event "AWS_CREDENTIAL_SETUP" "SUCCESS" "AWS_AUTHENTICATION_SUCCESS" "AWS credentials configured and authentication successful"
+
 }
 
   if [[ "${ASSUME_ROLE:-false}" == "true" || -n "${AWS_PROFILE:-}" ]]; then
       setupAwsCredentials
+      add_event "SETUP AWS CREDENTIALS Function" "SUCCESS" "AWS credentials setup completed"
   else
       logInfoMessage "Neither ASSUME_ROLE=true nor AWS_PROFILE is set, skipping AWS credential setup"
-  fi
+      add_event "SETUP AWS CREDENTIALS Function" "SKIPPED" "AWS credential setup skipped"
+  fi  
 
 
 IFS=',' read -ra SERVICE_LIST <<< "${SERVICES}"
@@ -111,12 +122,14 @@ IFS=',' read -ra SERVICE_LIST <<< "${SERVICES}"
 for SERVICE in "${SERVICE_LIST[@]}"; do
 
   SERVICE="$(echo "${SERVICE}" | xargs)"
-
+  add_event "LOG_GROUP_SETUP for ${SERVICE}" "STARTED" "Setting up log group for service: ${SERVICE}"
   if [[ -z "${SERVICE}" ]]; then
     logErrorMessage "Empty service name found in SERVICES='${SERVICES}'"
+    add_event "SERVICE_NAME_VALIDATION Log Group Setup for ${SERVICE}" "FAILED" "Empty service name found in SERVICES='${SERVICES}' for log group setup"
+    add_event "LOG_GROUP_SETUP for ${SERVICE}" "FAILED" "Failed to set up log group for service: ${SERVICE}"
     exit 1
   fi
-
+  add_event "SERVICE_NAME_VALIDATION Log Group Setup for ${SERVICE}" "SUCCESS" "Service name validation passed for service: ${SERVICE} for log group setup"
   SERVICE_UPPER="$(echo "${SERVICE}" | tr '[:lower:]-' '[:upper:]_')"
 
   LOG_GROUP="/ecs/${SERVICE}"
@@ -125,6 +138,7 @@ for SERVICE in "${SERVICE_LIST[@]}"; do
 
   logInfoMessage "${SERVICE_UPPER}_LOG_GROUP=${LOG_GROUP}"
   export "${SERVICE_UPPER}_LOG_GROUP=${LOG_GROUP}"
+  add_event "LOG_GROUP_SETUP for ${SERVICE}" "SUCCESS" "Setting up log group for service: ${SERVICE}"
 
 done
 
@@ -133,15 +147,17 @@ logInfoMessage "=== Prepare: capture live ECS Task Definitions ==="
 IFS=',' read -ra SERVICE_LIST <<< "${SERVICES}"
 
 for SERVICE in "${SERVICE_LIST[@]}"; do
-
+add_event "TASK_DEFINITION_FETCH for ${SERVICE}" "STARTED" "Fetching task definition for service: ${SERVICE}"
   # Remove accidental spaces
   SERVICE="$(echo "${SERVICE}" | xargs)"
 
   if [[ -z "${SERVICE}" ]]; then
     logErrorMessage "Empty service name found in SERVICES='${SERVICES}'"
+    add_event "SERVICE_NAME_VALIDATION Task Definition Fetch for ${SERVICE}" "FAILED" "Empty service name found in SERVICES='${SERVICES}' for task definition setup"
+    add_event "TASK_DEFINITION_FETCH for ${SERVICE}" "FAILED" "Failed to fetch task definition for service: ${SERVICE}"
     exit 1
   fi
-
+    add_event "SERVICE_NAME_VALIDATION Task Definition Fetch for ${SERVICE}" "SUCCESS" "Service name validation passed for service: ${SERVICE} for task definition fetch"
   SERVICE_UPPER="$(echo "${SERVICE}" | tr '[:lower:]' '[:upper:]')"
 
   logInfoMessage "================================================"
@@ -152,26 +168,30 @@ for SERVICE in "${SERVICE_LIST[@]}"; do
       --cluster "${ECS_CLUSTER}" \
       --services "${SERVICE}" \
       --query 'services[0].taskDefinition' \
-      --output text)"; then
+      --output text)"
+      add_event "TASK_DEFINITION_FETCH for ${SERVICE}" "SUCCESS" "Task definition fetched successfully for service: ${SERVICE}"; then
 
     logErrorMessage "Failed to get task definition for service: ${SERVICE}"
+    add_event "TASK_DEFINITION_FETCH for ${SERVICE}" "FAILED" "Failed to fetch task definition for service: ${SERVICE}"
     exit 1
-  fi
+  fi  
 
   # Validate AWS returned a usable task definition
   if [[ -z "${TASK_DEF_ARN}" || "${TASK_DEF_ARN}" == "None" ]]; then
     logErrorMessage "No task definition found for service: ${SERVICE}"
+    add_event "TASK_DEFINITION_FETCH for ${SERVICE}" "FAILED" "No task definition found for service: ${SERVICE}"
     exit 1
   fi
   
 
-SERVICE_UPPER="$(echo "${SERVICE}" | tr '[:lower:]-' '[:upper:]_')"
+  SERVICE_UPPER="$(echo "${SERVICE}" | tr '[:lower:]-' '[:upper:]_')"
 
   declare "PREVIOUS_${SERVICE_UPPER}_TASK_DEF=${TASK_DEF_ARN}"
 
   logInfoMessage "PREVIOUS_${SERVICE_UPPER}_TASK_DEF=${TASK_DEF_ARN}"
   export "PREVIOUS_${SERVICE_UPPER}_TASK_DEF=${TASK_DEF_ARN}"
-
+  add_event "PREVIOUS_${SERVICE_UPPER}_TASK_DEF" "Su"
+    add_event "TASK_DEFINITION_FETCH for ${SERVICE}" "FAILED" "No task definition found for service: ${SERVICE}"
 done
 
 logInfoMessage "======================================================="
@@ -190,12 +210,14 @@ if [[ "${SCHEDULER}" == "true" ]]; then
   for RULE in "${SCHEDULER_LIST[@]}"; do
 
     RULE="$(echo "${RULE}" | xargs)"
-
+    add_event "SCHEDULER_TARGETS_FETCH ${RULE}" "START" "Scheduler targets fetch started for rule: ${RULE}"
     if [[ -z "${RULE}" ]]; then
       logErrorMessage "Empty scheduler rule found"
+          add_event "SCEDULER RULE for ${RULE}" "FAILED" "Empty Rule name found in SERVIRULECES='${RULE}' for Schedulersetup" 
+      add_event "SCHEDULER_TARGETS_FETCH ${RULE}" "FAILED" "Scheduler targets fetch failed for rule: ${RULE}"
       exit 1
     fi
-
+    add_event "SCHEDULER_TARGETS_FETCH ${RULE}" "START" "Scheduler targets fetch started for rule: ${RULE}"
     logInfoMessage "=========================================="
     logInfoMessage "Processing scheduler rule: ${RULE}"
     logInfoMessage "=========================================="
@@ -203,17 +225,21 @@ if [[ "${SCHEDULER}" == "true" ]]; then
     # Get scheduler targets
     if ! aws events list-targets-by-rule \
         --rule "${RULE}" \
-        --output json > "current-targets-${RULE}.json"; then
+        --output json > "current-targets-${RULE}.json"
+        add_event "SCHEDULER_TARGETS_FETCH ${RULE}" "SUCCESS" "Scheduler targets fetched successfully"; then
 
       logErrorMessage "Failed to get targets for scheduler rule: ${RULE}"
       saveTaskStatus 1 ${ACTIVITY_SUB_TASK_CODE}
+      add_event "SCHEDULER_TARGETS_FETCH ${RULE}" "FAILED" "Scheduler targets fetch failed for rule: ${RULE}"
       exit 1
     fi
 
     # Validate Targets
-    if ! jq -e '.Targets' "current-targets-${RULE}.json" >/dev/null; then
+    if ! jq -e '.Targets' "current-targets-${RULE}.json" >/dev/null
+      add_event "SCHEDULER_TARGETS_FETCH ${RULE}" "SUCCESS" "Targets found for scheduler rule: ${RULE} & data store in current-targets-${RULE}.json" ; then
       logErrorMessage "Targets not found for scheduler rule: ${RULE}"
       saveTaskStatus 1 ${ACTIVITY_SUB_TASK_CODE}
+      add_event "SCHEDULER_TARGETS_FETCH ${RULE}" "FAILED" "Targets not found for scheduler rule: ${RULE}"
       exit 1
     fi
 
